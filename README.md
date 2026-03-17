@@ -394,11 +394,19 @@ you will have to update the Kubernetes manifests, notably, the previous Redis se
 
 __TIP__: vote and worker need to be aware of the Redis _host IP_ and _password_.
 
-<!-- ## Destroy everything -->
 
-<!-- To keep some credits, make sure you execute `terraform destroy`. -->
+### Network access to download Redis
 
-<!-- There is a surprise here: GKE clusters cannot be destroyed by default, we need to modify the state by hand to tell terraform it is OK to delete it. -->
+By default, the VMs on GCP do not have a public IP to access the internet, so the install script will not work.
+You will have to update networking policies to make it work. For the purpose of this project, this can be done manually.
+
+
+## Destroy everything
+
+To keep some credits, make sure your resources (in particular the GKE cluster) is deleted.
+The easiest way is to run `terraform destroy`.
+
+If you are surprised with an error saying that the GKE cluster cannot be destroyed, it means you forgot to disable the `deletion_protection` in the resource.
 
 <!-- Open `terraform.tfstate`, look for the property `deletion_protection` and set its value to `false`. -->
 
