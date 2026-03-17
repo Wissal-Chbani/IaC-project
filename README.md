@@ -309,14 +309,15 @@ The app will thus be deployed locally inside containers on your machine.
 
 ### Mandatory
 
-Write the code that __builds__ the images from your local Dockerfiles, and __create__ the appropriate containers.
+1. Write the code that __builds__ the images from your local Dockerfiles
+2. Write the code that __creates__ the appropriate containers.
 
 **TIP**: start from your previous `docker-compose.yml`.
 
 ### Optional
 
-1. Modify the image resources so that they are rebuilt each time the code of the service changes.
-1. Use Terraform to push the images into a GCP Artifact Registry.
+3. Modify the image resources so that they are rebuilt each time the code of the service changes.
+4. Use Terraform to push the images into a GCP Artifact Registry.
 
 ## Part 2 - GCP and Kubernetes
 
@@ -336,7 +337,7 @@ __TIP__: To configure the Kubernetes provider, use and complete the code inside 
 
 ### Optional
 
-1. Create a Terraform variable to configure the PostgreSQL password.
+3. Create a Terraform variable to configure the PostgreSQL password.
 
 
 ## Part 3 Optional - GCP, Kubernetes and Redis on its own VM
