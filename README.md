@@ -178,8 +178,9 @@ Note that this command can be found in the "Setup Instructions" button in the re
 
 
 * In case you struggle making this work, you can use our public images from Docker Hub during the session (not in the repo you will send us).
-  The tags are prefixed with `eloip13009`, for example `eloip13009/result`.
-  The suffixes are `vote`, `result`, `worker`, `seed-data`, `postgres-hs` and `redis-hs`.
+  The tags are prefixed with `eloip13009/voting-fila3`, for example `eloip13009/voting-fila3/result`.
+  The suffixes are `vote`, `result`, `worker` and `seed-data`
+  <!-- `postgres-hs` and `redis-hs`. -->
 
 You will notice that for the `seed-data` image, the public version only sends a total of 300 votes, instead of 3000 previously.
 
@@ -296,33 +297,58 @@ The tutorial on Terraform did not give you _all_ elements for this project: it w
 The point is for you to learn how to seek information in providers and other documentations.
 But most elements in the tutorials can be directly applied.
 
-Different levels are possible, the more advancement you make the better. **Part 1 and Part 2 are mandatory.**
+**IMPORTANT**: Make sure to organize your Terraform code well. Attention will be given to the repo organization, README, variable files, etc.
+The different parts of Terraform code should be segmented within directories. To be able to use the data from other directories, use either a local _module_ or a `terraform_remote_state` resource which allows you to refer to output variables.
 
-## Part 1 mandatory - Docker
+Different levels are possible, the more advancement you make the better.
 
-In this first part, you must write code that deploys the application with the Terraform Docker provider.
+## Part 1 - Docker
+
+In this first part, you must deploy the application with the Terraform Docker provider.
 The app will thus be deployed locally inside containers on your machine.
+
+### Mandatory
+
+Write the code that __builds__ the images from your local Dockerfiles, and __create__ the appropriate containers.
 
 **TIP**: start from your previous `docker-compose.yml`.
 
-## Part 2 mandatory - GKE and Kubernetes
+### Optional
 
-In this second part, you must write code that deploys the application onto a Kubernetes cluster provisioned with Terraform on GKE.
+1. Modify the image resources so that they are rebuilt each time the code of the service changes.
+1. Use Terraform to push the images into a GCP Artifact Registry.
+
+## Part 2 - GCP and Kubernetes
+
+In this second part, you will deploy the application onto a Kubernetes cluster provisioned with Terraform on GCP.
 Google and Kubernetes providers will be thus be used.
 
-**TIP**: you can start form the GKE tutorial and from your previous Kubernetes manifests.
+### Mandatory
 
-**IMPORTANT**: Make sure to organize your Terraform code well. Attention will be given to your organization (modules, directories, files)
+1. Write the code that creates a GKE (Google Kubernetes Engine) cluster. Make sure to use only one node for the whole cluster. For this, use a _zone_ in the `location`, and set the node count to 1.
 
-## Part 3 optional - GKE, Kubernetes and OpenStack
+**TIP**: Make sure to add `deletion_protection = true` to the cluster resource so that Terraform can delete it later.
 
-In this last part, you must deploy with Terraform the `Redis` database inside a VM on the school's OpenStack platform.
-This database must then communicate with the other components of the application located on the GKE cluster.
+2. Reuse your YAML manifests within Terraform to deploy the application. Use only the `kubernetes_manifest` resource type.
 
-### Changes to make this work
+__TIP__: To configure the Kubernetes provider, use and complete the code inside `gke-config.tf` in the repo.
+
+
+### Optional
+
+1. Create a Terraform variable to configure the PostgreSQL password.
+
+
+## Part 3 Optional - GCP, Kubernetes and Redis on its own VM
+
+In this last part, the objective is to decouple the Redis database from the Kubernetes cluster.
+Instead of a simple container in a Pod, Redis will be deployed in its own VM provisioned on GCP.
+This database must then communicate with the other components of the application located on the cluster.
+
+### Preliminary changes to the code
 
 By default, Redis is supposed to be used only locally and does not have a password.
-You must thus modify the application code that uses Redis so that they connect with a password.
+So you must modify the application code that uses Redis so that they connect with a password.
 
 #### Inside `vote/app.py`
 
@@ -332,7 +358,7 @@ On line 21, change
 ```
 to
 ```
-    g.redis = Redis(host="redis", password="osef", db=0, socket_timeout=5)
+    g.redis = Redis(host="redis", password="toto", db=0, socket_timeout=5)
 ```
 
 #### Inside `worker/Program.cs`
@@ -343,12 +369,12 @@ On line 116, change
 ```
 to
 ```
-    return ConnectionMultiplexer.Connect("redis,password=osef");
+    return ConnectionMultiplexer.Connect("redis,password=toto");
 ```
 
 #### cloud-init script to install Redis on a VM
 
-Use this script as in cloud-init to install Redis.
+Use this script as cloud-init userdata to install Redis.
 ```
 #!/usr/bin/env bash
 #
@@ -358,24 +384,26 @@ DEBIAN_FRONTEND=noninteractive apt update -q
 DEBIAN_FRONTEND=noninteractive apt install -q -y redis
 
 sed -e '/^bind/s/bind.*/bind 0.0.0.0/' -i /etc/redis/redis.conf
-sed -e '/# requirepass/s/.*/requirepass osef/' -i /etc/redis/redis.conf
+sed -e '/# requirepass/s/.*/requirepass toto/' -i /etc/redis/redis.conf
 ```
 
-## Destroy everything
+### Changes to the manifests
 
-To keep some credits, make sure you execute `terraform destroy`.
+To make the database available to the other components of the application located on the cluster,
+you will have to update the Kubernetes manifests, notably, the previous Redis service must be changed to a "headless" service.
 
-There is a surprise here: GKE clusters cannot be destroyed by default, we need to modify the state by hand to tell terraform it is OK to delete it.
+__TIP__: vote and worker need to be aware of the Redis _host IP_ and _password_.
 
-Open `terraform.tfstate`, look for the property `deletion_protection` and set its value to `false`.
+<!-- ## Destroy everything -->
 
-Alternatively, use `sed`:
-```
-    sed -e '/deletion_protection/s/true/false/' -i terraform.tfstate
-```
+<!-- To keep some credits, make sure you execute `terraform destroy`. -->
 
-### Améliorations
+<!-- There is a surprise here: GKE clusters cannot be destroyed by default, we need to modify the state by hand to tell terraform it is OK to delete it. -->
 
-* Faire un du script d'install redis un template pour passer le mot de passe en paramètre. Adaptez le `.tf`.
-* À partir du template `redis_endpointslice.yaml` qui configure une IP `endpoint_ip` de la BDD Redis externe. Adaptez le .tf
+<!-- Open `terraform.tfstate`, look for the property `deletion_protection` and set its value to `false`. -->
+
+<!-- Alternatively, use `sed`: -->
+<!-- ``` -->
+<!--     sed -e '/deletion_protection/s/true/false/' -i terraform.tfstate -->
+<!-- ``` -->
 
