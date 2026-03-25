@@ -328,7 +328,7 @@ Google and Kubernetes providers will be thus be used.
 
 1. Write the code that creates a GKE (Google Kubernetes Engine) cluster. Make sure to use only one node for the whole cluster. For this, use a _zone_ in the `location`, and set the node count to 1.
 
-**TIP**: Make sure to add `deletion_protection = true` to the cluster resource so that Terraform can delete it later.
+**TIP**: Make sure to add `deletion_protection = false` to the cluster resource so that Terraform can delete it later.
 
 2. Reuse your YAML manifests within Terraform to deploy the application. Use only the `kubernetes_manifest` resource type.
 
