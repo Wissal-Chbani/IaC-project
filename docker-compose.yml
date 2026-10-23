@@ -1,15 +1,15 @@
 services:
     redis:
       image: redis:alpine
-      healthcheck:
-        test: ["CMD", "/healthchecks/redis.sh"]
-        interval: 30s
-        timeout: 10s
-        retries: 3
       volumes:
-      - ./healthchecks:/healthchecks
+        - ./healthchecks/:/healthchecks/
+      healthcheck:
+        test: ["CMD", "redis-cli", "ping"]
+        interval: 10s
+        timeout: 5s
+        retries: 3
       networks:
-        - back-tier
+        - back-net
     
     postgres:
       image: postgres:15-alpine
@@ -65,13 +65,13 @@ services:
       networks:
         - front-tier
     nginx:
-      image: nginx4
-      ports:
-       - "8000:8000"
+      build: ./nginx
       depends_on:
         - vote
+      ports:
+        - "8000:8000"
       networks:
-        - front-tier
+        - front-net
 
 volumes : 
   db-data :
