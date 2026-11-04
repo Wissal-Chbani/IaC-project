@@ -26,7 +26,7 @@ services:
         - db-data:/var/lib/postgresql/data
         - ./healthchecks:/healthchecks
       networks:
-        - back-tier
+        - back-net
     
     vote:
       image: vote
@@ -36,8 +36,8 @@ services:
         redis:
           condition: service_healthy
       networks:
-        - back-tier
-        - front-tier
+        - back-net
+        - front-net
     worker:
       image: nouhabk23/worker_image
       depends_on:
@@ -46,7 +46,7 @@ services:
         postgres:
           condition: service_healthy
       networks:
-        - back-tier
+        - back-net
       
     result:
       image: result
@@ -56,14 +56,14 @@ services:
         postgres:
           condition: service_healthy
       networks:
-        - back-tier
-        - front-tier
+        - back-net
+        - front-net
     seed:
       image: seed1
       depends_on:
         - nginx
       networks:
-        - front-tier
+        - front-net
     nginx:
       build: ./nginx
       depends_on:
@@ -77,9 +77,9 @@ volumes :
   db-data :
 
 networks:
-  front-tier:
+  front-net:
     driver: bridge
-  back-tier:
+  back-net:
     driver: bridge
 
     
