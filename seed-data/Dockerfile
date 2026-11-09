@@ -8,6 +8,8 @@ COPY make-data.py .
 
 RUN python make-data.py
 
+COPY generate-votes.sh .
+
 RUN sed -i 's/\r$//' generate-votes.sh
 
 CMD ["sh", "generate-votes.sh"]
