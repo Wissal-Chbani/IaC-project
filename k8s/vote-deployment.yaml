@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-deployment
+spec:
+  template:
+    metadata:
+      labels:
+        frontend: vote
+    spec:
+      containers:
+        - name: vote-container
+          image: iac-project-vote:latest
+          imagePullPolicy: Never
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 3
+  replicas: 3
+  selector:
+    matchLabels:
+      frontend: vote
